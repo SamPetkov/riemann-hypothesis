@@ -912,9 +912,11 @@ lemma stdClassSum_thirdExchangeKernel_productDatum {a : Type} [Fintype a]
   have h_sign : ((1 : D.CarrierIndex → ℤˣ) ⊕ᵥ (padSigns j ⊕ᵥ 1)) ∘ regroupEquiv j =
       D.signsW j ⊕ᵥ (-1 ⊕ᵥ 1) := by
     ext1 (_ | _ | _ | _ | _) <;> rfl
-  -- `erw` is needed: the kernels are stated on index types that agree only after unfolding
-  erw [← modKernel_reindex (regroupEquiv ..).symm h_sign (.refl _) rfl,
-    ← map_sum ((modKernelBilin ..) _), modKernelBilin_apply]
+  refine (modKernel_reindex (regroupEquiv ..).symm h_sign (.refl _) rfl _ _ _ _).symm.trans ?_
+  symm
+  refine (Finset.sum_congr rfl fun _ _ ↦ (modKernelBilin_apply ..).symm).trans ?_
+  rw [← map_sum, modKernelBilin_apply]
+  symm
   -- compare the two kernels argument by argument
   congr! 1
   · -- the first spaces
