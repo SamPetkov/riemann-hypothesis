@@ -343,10 +343,9 @@ lemma GaugeLe.restrictToY_of_diag {d : Gf D.E (D.X D.m)}
     simpa [a, s, hd, apply_ite, starRingEnd_apply (R := D.E)] using h_prod
   have h_comp : ιₚ ∘ (D.branching.map (↑) *ᵥ φ.val (D.borderU g)) =
       D.branching.map (↑) *ᵥ (ιₚ ∘ φ.val (D.borderU g)) := funext (by simp [mulVec_eq_sum])
-  rw [h_restrict, weylGauge_smul, mulVec_mulVec]
-  -- `erw`, as `D.X D.m` and `InitIndex ⊕ Unit` agree only after unfolding
-  erw [h_intertwine, smul_mulVec, ← mulVec_mulVec, Units.smul_def, norm_smul]
-  rw [h_scalar, weylGauge, h_comp]
+  rw [h_restrict, weylGauge_smul, h_scalar, weylGauge, h_comp, ← norm_smul, ← Units.smul_def,
+    mulVec_mulVec, ← smul_mulVec, mulVec_mulVec]
+  exact congrArg (‖· *ᵥ (ιₚ ∘ φ.val (D.borderU g))‖) h_intertwine.symm
 
 /-- For `p ≠ N`, a form that has gauge at most `c` at every point has a restriction to `Y_m` with
 the same bound. -/

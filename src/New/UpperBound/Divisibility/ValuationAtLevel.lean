@@ -93,7 +93,8 @@ lemma norm_detCharAt_diagN_le {i : ℕ} (hi : i ≤ 2 * D.m) (k j : ℕ) (S : Fi
   suffices ‖ιₚ ((D.chainChar ϑ i).baseChange.1 (detOn D.nonInducedPlaces (D.diagPoint j S).1))‖ ≤
       ∏ τ : D.Φ, if star (D.inducedPlace τ) ∈ S then (D.N : ℝ) ^ (2 * D.b) else 1 by
     simpa [detCharAt, -atPlaces_embedGL, -prod_ite_mem] using this
-  erw [D.hasWeight_liftChar.norm_padic_eq_prod ιₚ _ (unitary _).one_mem.2,
+  change ‖ιₚ ((D.chainChar ϑ i).val (divStar (detOn D.nonInducedPlaces (D.diagPoint j S).1)))‖ ≤ _
+  rw [D.hasWeight_liftChar.norm_padic_eq_prod ιₚ _ (unitary _).one_mem.2,
     ← G.detFin_of_mem_supportedOn (s := 1) isConjDisjoint (embedGL_mem_supportedOn _)]
   exact prod_le_prod₀ (by simp) fun τ _ ↦ by simpa using h_place τ
 
@@ -149,8 +150,9 @@ lemma projOn_translateDatum_mem_standardData (x : D.Translations) (j : ℕ) (δ 
     {𝔪 : Modulus D.E} (h_places : 𝔪.places = Set.range ((↑) : D.nonInducedPlaces → FinPlace D.E)) :
     (D.homX j).projOn 𝔪.places (D.translateDatum x j).val ∈
       Parameters.standardData (p := D.N) (D.homX j) δ := by
-  -- A translate datum is a Heisenberg translate of the vacuum by definition, hence `erw`.
-  erw [projOn_finHeisenbergOp _ (by simp [intVacuum]), boxIndicator_apply]
+  -- A translate datum is a Heisenberg translate of the vacuum by definition.
+  rw [translateDatum, heisenbergFinPart_apply_coe,
+    projOn_finHeisenbergOp _ (by simp [intVacuum]), boxIndicator_apply]
   split_ifs with h_box
   · rw [one_smul]
     refine Submodule.subset_span ⟨_, fun l w hw ↦ ?_, rfl⟩
@@ -427,9 +429,10 @@ lemma liftInPairs_gluedDoubleLiftDatum (v : ∀ j : ℕ, (D.homX j).finitePart) 
   simp only [map_sum, LinearMap.sum_apply, LinearMap.smul_apply, LinearMap.comp_apply, smul_sum,
     TensorChain.liftInPairs_tmul, lastColDatum, charDatum, h_first]
   refine Finset.sum_congr rfl fun y _ ↦ ?_
-  erw [h_second]
+  dsimp only [k₂] at h_second
+  rw [h_second]
   simp only [ρ.self_inv_apply, smul_smul, Units.smul_def, map_smul, gluedFactor,
-    Units.val_mul, MonoidHom.coe_comp, Function.comp_apply, map_inv, k₂]
+    Units.val_mul, MonoidHom.coe_comp, Function.comp_apply, map_inv]
 
 -- Keeps definitional checks from unfolding the finite sums.
 seal Finset.univ in
