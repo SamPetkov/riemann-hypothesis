@@ -180,9 +180,8 @@ lemma exists_isClassOfInvariant :
       exists_ordRat_eq_intCast fun g hg ↦ y.property ⟨g, hχ hg⟩
     refine ⟨j, ?_⟩
     qify
-    -- `erw`: `corestrictH0` unfolds to `DiscreteModule.sum`, a sum of maps only after unfolding.
-    erw [← hn, ← hy, corestrictH0, LinearMap.sum_apply, map_sum,
-        Finset.sum_eq_card_nsmul (b := ↑j)] <;>
+    rw [← hn, ← hy, corestrictH0, DiscreteModule.sum, Representation.IntertwiningMap.coe_mk,
+        LinearMap.sum_apply, map_sum, Finset.sum_eq_card_nsmul (b := ↑j)] <;>
       simp [index, Fintype.card_eq_nat_card, ← hj, eq_iff, ↓L.ordRat_eq_zero, decompGroup.val_smul,
         L.mem_decompGroup]
   -- `c` is additive by the uniqueness in `c_unique`.

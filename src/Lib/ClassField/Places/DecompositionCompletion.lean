@@ -764,15 +764,20 @@ lemma ramification_in_tower (h : IsPlaceOver A v) (U : Subgroup Γ) [hU_open : F
   -- The fixed field of `V` is the decomposition field of `A` over `L`.
   have h_same_set : (fixedFieldOf (decompGroup U A) : Set Ω) =
       fixedFieldOf (U.subgroupOf (decompGroup Γ A)) := by aesop
-  -- `erw` here and in the next two steps: the two fields are equal as sets only, so the rewrites
-  -- go through a copy of the field, equal to it by definition.
-  erw [← (fixedFieldOf (U.subgroupOf _)).copy_eq (fixedFieldOf (decompGroup U A)) h_same_set]
-    at hq h_ord
+  dsimp only [V, id_eq] at hq h_ord
+  have h_sub_eq :
+      (fixedFieldOf (U.subgroupOf (decompGroup Γ A))).toSubfield =
+        (fixedFieldOf (decompGroup U A)).toSubfield :=
+    Subfield.ext fun x ↦ (Set.ext_iff.mp h_same_set x).symm
+  change residueCard (fixedFieldOf (U.subgroupOf (decompGroup Γ A))).toSubfield A = _ at hq
+  change ordRat (fixedFieldOf (U.subgroupOf (decompGroup Γ A))).toSubfield A = _ at h_ord
+  rw [h_sub_eq] at hq h_ord
+  change residueCard (fixedFieldOf (decompGroup U A)) A = _ at hq
+  change ordRat (fixedFieldOf (decompGroup U A)) A = _ at h_ord
   have h_q : w.q = v.q ^ f := by
-    erw [← h.residueCard_fixedFieldOf_decompGroup Γ, ← hw.residueCard_fixedFieldOf_decompGroup U,
-      hq]
+    rw [← h.residueCard_fixedFieldOf_decompGroup Γ, ← hw.residueCard_fixedFieldOf_decompGroup U, hq]
   have h_ord_L : ordRat L A = e • ordRat K A := by
-    erw [← h.ordRat_fixedFieldOf_decompGroup Γ, ← hw.ordRat_fixedFieldOf_decompGroup U, h_ord]
+    rw [← h.ordRat_fixedFieldOf_decompGroup Γ, ← hw.ordRat_fixedFieldOf_decompGroup U, h_ord]
   have h_norm : v.q ^ w.asIdeal.inertiaDeg (𝓞 K) = w.q :=
     absNorm_pow_inertiaDeg v.asIdeal w.asIdeal
   obtain rfl : w.asIdeal.inertiaDeg (𝓞 K) = f :=
