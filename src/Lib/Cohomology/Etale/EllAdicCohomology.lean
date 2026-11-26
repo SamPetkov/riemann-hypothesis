@@ -95,8 +95,9 @@ def ellAdicCohom.galoisAction (X : Over (Spec R)) (n : ℕ) :
           (freeAb.map (mapOnTests (baseChangeTransition _ (CommRingCat.ofHom g) (by aesop))))
       map_one' := congr($((ellAdicCohom R Ω n).map_id (Opposite.op X)).hom)
       map_mul' g g' := by
-        ext
-        erw [ellAdicPull.comp, ← freeAb.map_comp]
+        ext x
+        change _ = ellAdicPull n _ (ellAdicPull n _ x)
+        rw [ellAdicPull.comp, ← freeAb.map_comp]
         rfl }
     (MulSemiringAction.toAlgAut Γ R Ω)
 
@@ -107,7 +108,15 @@ lemma ellAdicCohom.map_galoisAction {X Y : Over (Spec R)} (f : X ⟶ Y) (g : Γ)
       galoisAction R Ω Γ X n g ((ellAdicCohom R Ω n).map f.op x) := by
   -- both sides are pull-backs along a composite, and the two composites are the same map (the two
   -- composites have the same type only after unfolding `geomPoints`)
-  repeat erw [ellAdicPull.comp, ← freeAb.map_comp]
+  let φ : (geomPoints R Ω).obj X ⟶ (geomPoints R Ω).obj Y := (geomPoints R Ω).map f
+  let gX : (geomPoints R Ω).obj X ⟶ (geomPoints R Ω).obj X :=
+    baseChangeTransition _ (CommRingCat.ofHom (MulSemiringAction.toAlgAut Γ R Ω g)) (by aesop)
+  let gY : (geomPoints R Ω).obj Y ⟶ (geomPoints R Ω).obj Y :=
+    baseChangeTransition _ (CommRingCat.ofHom (MulSemiringAction.toAlgAut Γ R Ω g)) (by aesop)
+  let y : ℚ_[ℓ] ⊗[ℤ_[ℓ]] H (freeAb.obj (testIncl ⋙ (geomPoints R Ω).obj Y)) ellAdicCoeff n := x
+  change ellAdicPull n (freeAb.map (mapOnTests φ)) (ellAdicPull n (freeAb.map (mapOnTests gY)) y) =
+    ellAdicPull n (freeAb.map (mapOnTests gX)) (ellAdicPull n (freeAb.map (mapOnTests φ)) y)
+  rw [ellAdicPull.comp, ellAdicPull.comp, ← freeAb.map_comp, ← freeAb.map_comp]
   rfl
 
 /-! ### Comparison with finite coefficients -/
