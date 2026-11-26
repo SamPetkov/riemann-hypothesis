@@ -190,10 +190,10 @@ lemma boxProd_integrated (v₁ : IsVacuum.Model (realHeisenberg (realSigns E s�
   -- `integrated_tmul` writes the right side as an integral against `v₁` of an integral against
   -- `v₂`. By `map_integrated` an intertwining map commutes with such an integral, so each one
   -- passes out of its factor. The two goals left are the intertwining properties: a real vector of
-  -- one summand acts on the product through that factor only. (`erw`: `integrated` matches the
-  -- integral of `map_integrated` only after unfolding the Heisenberg representation.)
-  erw [map_integrated _ ((boxProd hs).flip _), map_integrated _ (boxProd hs _), eq_comm,
-      integrated_tmul]
+  -- one summand acts on the product through that factor only.
+  dsimp only [Space.integrated, realBoxProd]
+  rw [← ContinuousLinearMap.flip_apply, map_integrated _ ((boxProd hs).flip _),
+    ContinuousLinearMap.flip_apply, map_integrated _ (boxProd hs _), eq_comm, integrated_tmul]
   · -- a real vector of the second summand acts on `f₁ ⊠ f` through `f`
     simp [left, right, rho_boxProd, realVec, realCoordSum, comp_def, ← Pi.zero_def,
       ← Prod.zero_eq_mk]
@@ -353,11 +353,18 @@ def map : 𝒮 V₁ →SL[σ] 𝒮 V := IsVacuum.transport D.beta_phi D.vacuumFn
 𝒮(V₁) to 𝒮(V) intertwines the Heisenberg operators: it sends ϱ(φx)f to ϱ(x) applied to the
 image of f, for all x and f. -/
 lemma map_rho (x : n → 𝔸 E) (f : 𝒮 V₁) : D.map (V₁.ϱ (D.φ x) f) = V.ϱ x (D.map f) := by
-  -- At a point `z` both sides are `β x z` times `σ` of the value of `f` at `D.φ (z - x)`. `erw`:
-  -- elements of `𝒮 V` are those of the Heisenberg model only after unfolding, so
-  -- `heisenbergOp_apply` and `transport_apply` do not apply by `rw`; they fire on both sides.
-  refine ext fun _ ↦ ?_
-  repeat erw [heisenbergOp_apply, transport_apply]
+  -- At a point `z` both sides are `β x z` times `σ` of the value of `f` at `D.φ (z - x)`.
+  refine ext fun z ↦ ?_
+  have h_tr (g : 𝒮 V₁) (y : n → 𝔸 E) : (D.map (V := V) g).val y = σ (g.val (D.φ y)) :=
+    transport_apply ..
+  have h_r₁ (y w : n₁ → 𝔸 E) (g : 𝒮 V₁) :
+      (V₁.ϱ y g).val w = (adelicHeisenberg E s₁).β y w * g.val (w - y) :=
+    heisenbergOp_apply ..
+  have h_r (y w : n → 𝔸 E) (g : 𝒮 V) :
+      (V.ϱ y g).val w = (adelicHeisenberg E s).β y w * g.val (w - y) :=
+    heisenbergOp_apply ..
+  change (D.map (V₁.ϱ (D.φ x) f)).val z = (V.ϱ x (D.map f)).val z
+  rw [h_tr, h_r₁, h_r, h_tr]
   simp [beta_phi]
 
 /-- For a change of adelic coordinates `D` from signs `s₁` to signs `s` (a map φ = A × B that keeps
@@ -377,15 +384,32 @@ lemma map_omega {g : G E s} {g₁ : G E s₁}
     {c : ℂ} (hc : σ (weilMultiplier g₁) = c * weilMultiplier g) (f : 𝒮 V₁) :
     D.map (V₁.ω g₁ f) = c • V.ω g (D.map f) := by
   -- The left side at `x` is `σ` of the value of `ω(g₁) f` at `D.φ x`, the right side `c` times
-  -- the value of `ω(g) (D.map f)` at `x`. (`erw`: as in `map_rho`, the lemmas about the Heisenberg
-  -- model apply to `𝒮 V` only after unfolding.)
+  -- the value of `ω(g) (D.map f)` at `x`.
   refine ext fun x ↦ ?_
-  change σ ((V₁.ω g₁ f).val (D.φ x)) = c * (V.ω g (D.map f)).val x
+  let f₁ : Model (adelicHeisenberg E s₁) := f
+  let df : Model (adelicHeisenberg E s) := D.map (V := V) f
+  let w₁ : Model (adelicHeisenberg E s₁) := V₁.ω g₁ f
+  let w : Model (adelicHeisenberg E s) := V.ω g (D.map f)
   -- write both values at `x` as `weilMultiplier` times an integral
-  repeat erw [Space.ω, weilRep, IsVacuum.smul_apply, integrated_apply_eq_integral]
+  have h_ω₁ : w₁ (D.φ x) = weilMultiplier g₁ *
+      ∫ z, f₁ z * ((IsVacuum.heisenbergRep.moveBy adelicAction g₁).ρ z vacElem) (D.φ x)
+        ∂vacuumMeasure := by
+    change (weilRep adelicAction g₁ f₁) (D.φ x) = _
+    simp only [weilRep, MonoidHom.coe_mk, OneHom.coe_mk, weilOp, _root_.smul_apply,
+      ContinuousLinearMap.flip_apply, IsVacuum.smul_apply, integrated_apply_eq_integral]
+    rfl
+  have h_ω₂ : w x = weilMultiplier g *
+      ∫ z, df z * ((IsVacuum.heisenbergRep.moveBy adelicAction g).ρ z vacElem) x
+        ∂vacuumMeasure := by
+    change (weilRep adelicAction g df) x = _
+    simp only [weilRep, MonoidHom.coe_mk, OneHom.coe_mk, weilOp, _root_.smul_apply,
+      ContinuousLinearMap.flip_apply, IsVacuum.smul_apply, integrated_apply_eq_integral]
+    rfl
+  change σ (w₁ (D.φ x)) = c * w x
+  rw [h_ω₁, h_ω₂]
   -- substitute `D.φ` in the integral on the left: `σ (∫ F) = ∫ σ ∘ F ∘ D.φ` for every `F`, and
   -- `σ (e (D.φ x)) = e x` for the vacuum `e`
-  have h_val (y : n → 𝔸 E) : (D.map (V := V) f).val y = σ (f.val (D.φ y)) := transport_apply ..
+  have h_val (y : n → 𝔸 E) : df y = σ (f₁ (D.φ y)) := transport_apply ..
   simp [hc, ← h_phi_mulVec, ← map_sub, beta_phi, mul_assoc, h_val,
     map_integral_and_map_vacuum (adelicHeisenberg E s₁) (adelicHeisenberg E s) D.vacuumFn_apply]
 
@@ -401,14 +425,39 @@ lemma map_integrated (v : Model (realHeisenberg (realSigns E s₁))) (f : 𝒮 V
     D.map (V₁.integrated v f) = V.integrated (D.realMap v) (D.map f) := by
   refine ext fun x ↦ ?_
   -- write both values at `x` as integrals over real vectors and substitute `A = D.realEquiv` on the
-  -- left: `σ (∫ F) = ∫ σ ∘ F ∘ A` for every `F` (`erw` as in `map_rho`)
-  erw [transport_apply, ← valueAt_apply, map_integrated_eq_integral,
+  -- left: `σ (∫ F) = ∫ σ ∘ F ∘ A` for every `F`
+  let lhs : Model (adelicHeisenberg E s) := D.map (V := V) (V₁.integrated v f)
+  let rhs : Model (adelicHeisenberg E s) := V.integrated (D.realMap v) (D.map f)
+  let u₁ : Model (adelicHeisenberg E s₁) := V₁.integrated v f
+  have h_tr : lhs x = σ (u₁ (D.φ x)) := transport_apply ..
+  have h_int₁ : u₁ (D.φ x) =
+      ∫ y, v y * valueAt (D.φ x) ((V₁.heisenbergRep.left (adelicSum E s₁)).ρ y f)
+        ∂normalizedVolume (NumberField.InfinitePlace E × n₁) :=
+    (valueAt_apply (D.φ x) u₁).symm.trans
+      (map_integrated_eq_integral (V₁.heisenbergRep.left (adelicSum E s₁)) (valueAt (D.φ x)) v f)
+  have h_int : rhs x =
+      ∫ y, (D.realMap v) y * valueAt x ((V.heisenbergRep.left (adelicSum E s)).ρ y (D.map f))
+        ∂normalizedVolume (NumberField.InfinitePlace E × n) :=
+    (valueAt_apply x rhs).symm.trans
+      (map_integrated_eq_integral (V.heisenbergRep.left (adelicSum E s)) (valueAt x)
+        (D.realMap v) (D.map f))
+  change lhs x = rhs x
+  rw [h_tr, h_int₁, h_int,
     (map_integral_and_map_vacuum (realHeisenberg (realSigns E s₁))
-      (realHeisenberg (realSigns E s)) D.vac_realEquiv).1, ← valueAt_apply,
-    map_integrated_eq_integral]
+      (realHeisenberg (realSigns E s)) D.vac_realEquiv).1]
   -- the integrands agree: `D.φ` acts on a real vector `y` by `A`, and `D.map` respects `ϱ`
   congr! 2 with y
-  erw [← map_rho, apply_adelicSum]
+  have h_ρ : (V.heisenbergRep.left (adelicSum E s)).ρ y (D.map f) =
+      D.map ((V₁.heisenbergRep.left (adelicSum E s₁)).ρ (D.realEquiv y) f) := by
+    change V.ϱ ((adelicSum E s).equiv (y, 0)) (D.map f) =
+      D.map (V₁.ϱ ((adelicSum E s₁).equiv (D.realEquiv y, 0)) f)
+    rw [← map_rho, D.apply_adelicSum, map_zero]
+  have h_v : valueAt x
+        (D.map (V := V) ((V₁.heisenbergRep.left (adelicSum E s₁)).ρ (D.realEquiv y) f)) =
+      σ (valueAt (D.φ x) ((V₁.heisenbergRep.left (adelicSum E s₁)).ρ (D.realEquiv y) f)) :=
+    transport_apply (H := adelicHeisenberg E s₁) (H' := adelicHeisenberg E s) D.beta_phi
+      D.vacuumFn_apply ((V₁.heisenbergRep.left (adelicSum E s₁)).ρ (D.realEquiv y) f) x
+  rw [h_ρ, h_v]
   -- both sides are `σ (v (A y))` times `σ` of the value of `ϱ(A y) f` at `D.φ x`
   aesop
 
